@@ -1,22 +1,11 @@
 from conan import ConanFile
 
 from conan.tools.files import copy # uncomment only if you need the copy function of conan2
+from conan import conan_version
 
 class MyConanFile(ConanFile):
     name = "my_conan_file"
     version = "1.0.0"
-
-    # this is just for demo purpose options and default options should be injected
-    # from conandata.yml file
-    options = {
-        "option_a": [True, False],
-        "option_b": ["var1", "var2", "var3"]
-    }
-
-    default_options = {
-        "option_a": True,
-        "option_b": "var1"
-    }
 
     exclude_list = [
         ".git/*",
@@ -29,12 +18,20 @@ class MyConanFile(ConanFile):
         "quality_container/*"
     ]
 
+    # definition of empty directories is needed for conan1 compatibility
+    options = {}
+    default_options = {}
+
     def init(self):
         if local_options := self.conan_data.get("local_options", None):
-            self.output.info("add options from conandata.yml file")
-            for option_name in local_options:
-                self.output.info(f"my option {option_name}: {local_options[option_name]}")
-                # inject my options here
+            default_options = {k: v[0] for k, v in local_options.items()}
+            if conan_version.major > 1:
+
+                self.options.update(local_options, default_options)
+            else:
+                self.options.update(local_options)
+                self.default_options.update(default_options)
+
 
     def package(self):
         # copy source files
